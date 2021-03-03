@@ -16,29 +16,72 @@ def clear_generated_dir():
 
 
 def f_segmentation(image_name, ifshow):
-    img = cv2.imread('../img/'+image_name, 0) 
-    sobel = cv2.Sobel(img, cv2.CV_64F, 1, 1, ksize=7)
+    
+    img = cv2.imread('../img/'+image_name) 
+    show_image(img)
+
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    show_image(img)
+
+    # pour retirer le bruit
+    low_dilated_img = cv2.dilate(img, np.ones((3,3), np.uint8))
+    if ifshow:
+        show_image(low_dilated_img)
+
+    dilated_img = cv2.dilate(img, np.ones((50,50), np.uint8))
+    if ifshow:
+        show_image(dilated_img)
+
+    # pour atténuer le bruit de l'image dilaté
+    bg_img = cv2.medianBlur(dilated_img, 7)
+    if ifshow:
+        show_image(bg_img)
+
+    diff_img = 255 - cv2.absdiff(low_dilated_img, bg_img)
+    if ifshow:
+        show_image(diff_img)
+
+    _, img_th = cv2.threshold(diff_img, 220, 255, cv2.THRESH_OTSU | cv2.THRESH_BINARY_INV)
+    if ifshow:
+        show_image(img_th)
+
+    img_floodfill = img_th.copy()
+    h, w = img_th.shape[:2]
+    mask = np.zeros((h+2, w+2), np.uint8)
+    cv2.floodFill(img_floodfill, mask, (0,0), 255);
+
+    img_floodfill_inv = cv2.bitwise_not(img_floodfill)
+    if ifshow:
+        show_image(img_floodfill_inv)
+
+    img_out = img_th | img_floodfill_inv
+    if ifshow:
+        show_image(img_out)
+
     if not os.path.exists('../img/generated/'):
         os.makedirs('../img/generated/')
-    cv2.imwrite('../img/generated/temp.jpg', sobel)
-    
-    img = cv2.imread('../img/generated/temp.jpg', 0) 
-    ret, thresh = cv2.threshold(img, 127, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
-    os.remove('../img/generated/temp.jpg')
     if not os.path.exists('../img/generated/segmentation'):
         os.makedirs('../img/generated/segmentation')
-    cv2.imwrite('../img/generated/segmentation/' + str(uuid.uuid1()) + '.jpg', thresh)
+    cv2.imwrite('../img/generated/segmentation/' + str(uuid.uuid1()) + '.jpg', img_out)
 
-    if ifshow:
-        show_image(thresh)
+    #Sobel edge detection
+    #img = cv2.GaussianBlur(img,(5,5),0)
+    #ret, otsu = cv2.threshold(img,127,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+    #show_image(otsu)
 
+    #sobel = cv2.Sobel(img, cv2.CV_64F, 1, 1, ksize=5)
+    #if not os.path.exists('../img/generated/'):
+    #    os.makedirs('../img/generated/')
+    #cv2.imwrite('../img/generated/temp.jpg', sobel)
+    #show_image(sobel)
+    
 
 def image_analysis():
     parser = argparse.ArgumentParser(description='--Analyse Image--')
     parser.add_argument('--image', 
                         metavar = '<file_name>', 
                         help = 'image file to parse', 
-                        required = True)
+                        required = False)
     parser.add_argument('--segmentation',
                         '-s',
                         help = 'segmentation',
@@ -60,8 +103,9 @@ def image_analysis():
     show = args.show
     clear = args.clear
 
-    print('--- Analyse d\'image ---')
-    print("Travail de l'image: " + image_name)
+    if image_name:
+        print('--- Analyse d\'image ---')
+        print("Travail de l'image: " + image_name)
 
     if clear:
         clear_generated_dir()
