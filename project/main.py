@@ -18,17 +18,19 @@ def clear_generated_dir():
 def f_segmentation(image_name, ifshow):
     
     img = cv2.imread('../img/'+image_name) 
-    show_image(img)
+    if ifshow:
+        show_image(img)
 
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    show_image(img)
+    img_bin = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    if ifshow:
+        show_image(img)
 
     # pour retirer le bruit
-    low_dilated_img = cv2.dilate(img, np.ones((3,3), np.uint8))
+    low_dilated_img = cv2.dilate(img_bin, np.ones((3,3), np.uint8))
     if ifshow:
         show_image(low_dilated_img)
 
-    dilated_img = cv2.dilate(img, np.ones((50,50), np.uint8))
+    dilated_img = cv2.dilate(img_bin, np.ones((50,50), np.uint8))
     if ifshow:
         show_image(dilated_img)
 
@@ -46,7 +48,7 @@ def f_segmentation(image_name, ifshow):
         show_image(img_th)
 
     img_floodfill = img_th.copy()
-    h, w = img_th.shape[:2]
+    h, w = img_th.shape[:]
     mask = np.zeros((h+2, w+2), np.uint8)
     cv2.floodFill(img_floodfill, mask, (0,0), 255);
 
@@ -54,7 +56,33 @@ def f_segmentation(image_name, ifshow):
     if ifshow:
         show_image(img_floodfill_inv)
 
-    img_out = img_th | img_floodfill_inv
+
+
+    img_out = img_th | img_floodfill_inv 
+    if ifshow:
+        show_image(img_out)
+
+    # convert into 3 dimensions
+    img2 = np.zeros_like(img)
+    img2[:,:,0] = img_out
+    img2[:,:,1] = img_out
+    img2[:,:,2] = img_out
+
+    # convert white background to black
+    img[img >= 250] = 0
+
+    # get mean color channel
+    green_channel = np.mean(img[:,:,0])
+    blue_channel = np.mean(img[:,:,1])
+    red_channel = np.mean(img[:,:,2])
+    img[:,:,0] = green_channel
+    img[:,:,1] = blue_channel
+    img[:,:,2] = red_channel
+
+    # fill floodfilled image with mean color
+    img_out = img2 & img
+
+    show_image(img_out)
     if ifshow:
         show_image(img_out)
 
