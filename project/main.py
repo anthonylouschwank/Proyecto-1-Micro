@@ -88,7 +88,7 @@ def f_knn(data, label):
     # searching for the best k
     knn_scores = []
     knn_classifiers = []
-    for i in range(1, 3):
+    for i in range(1, 12):
         knn = KNeighborsClassifier(n_neighbors=i, algorithm='brute', n_jobs=-1)
         knn_scores.append(cross_val_score(knn, data, label, cv=7, n_jobs=-1, scoring='accuracy').mean())
         knn_classifiers.append(knn)
@@ -97,7 +97,7 @@ def f_knn(data, label):
     print(f'Best k is {knn_index+1} for {np.round(knn_scores[knn_index], 2)} accuracy')
 
     # training with the best k then predicting
-    X_train, X_test, y_train, y_test = train_test_split(data, label, train_size=0.7, random_state=2)
+    X_train, X_test, y_train, y_test = train_test_split(data, label, train_size=0.7, random_state=46)
     knn_classifiers[knn_index].fit(X_train, y_train)
     y_pred = knn_classifiers[knn_index].predict(X_test)
     print("Accuracy:", metrics.accuracy_score(y_test, y_pred))
@@ -113,7 +113,7 @@ def f_knn(data, label):
     plt.title('Taux de reconnaissance en fonction du nombre de voisins K')
     plt.xlabel('Nombre de voisins K')
     plt.ylabel('Taux de reconnaissance')
-    plt.plot(range(1, 3), knn_scores)
+    plt.plot(range(1, 12), knn_scores)
     plt.axhline(knn_scores[knn_index], color='r')
     plt.axvline(knn_index+1, color='r')
     plt.show()
