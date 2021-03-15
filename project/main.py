@@ -137,12 +137,14 @@ def couleurmaj(path):
         img = img.reshape((img.shape[0] * img.shape[1], 3))
         clt = KMeans(n_clusters = 5)
         clt.fit(img)
+
         numLabels = np.arange(0, len(np.unique(clt.labels_)) + 1)
+        print(clt.labels_)
         (hist, _) = np.histogram(clt.labels_, bins = numLabels)
         
         hist = hist.astype("float")
-
         hist /= hist.sum()
+
         bar = plot_colors(hist, clt.cluster_centers_)
         plt.figure()
         plt.axis("off")
