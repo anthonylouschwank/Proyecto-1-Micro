@@ -8,6 +8,7 @@ from sklearn import metrics
 from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.metrics import confusion_matrix
 from sklearn.neighbors import KNeighborsClassifier
+import platform
 
 
 def show_image(img, file):
@@ -76,8 +77,12 @@ def f_sandbox(path):
 
 def f_get_label(path):
     label = []
+    p = platform.system()
     for file in sorted(glob.glob(os.path.join(path, '*.*'))):
-        label.append(str(file.split('/')[2].split('_')[0]))
+        if p == 'Darwin' or p == 'Linux':
+            label.append(str(file.split('/')[2].split('_')[0]))
+        elif p == 'Windows':
+            label.append(str(file.split('\\')[1].split('_')[0]))
     return label
 
 
@@ -236,6 +241,7 @@ def image_analysis():
         clear_generated_dir()
 
     path = '../img/'
+    texture, compacite, elongation, couleur_dominante = None, None, None, None
 
     '''
     1. Segmentation
@@ -265,11 +271,19 @@ def image_analysis():
     data = [] # vecteur data qu'on utilisera pour nos modèles
     for i in range(len(label)):
         data_row = [] # 1 ligne = 1 echantillon = n features 
-        data_row.append(texture[i].flatten())
-        #data_row.append(compacite[i].flatten()) #TODO
-        #data_row.append(elongation[i].flatten()) #TODO
-        #data_row.append(couleur_dominante[i].flatten()) #TODO
-        data.append(data_row[0]) # on ajoute toutes les features de l'échantillon i
+        if texture: 
+            data_row.append(texture[i].flatten())
+        if compacite:
+            pass
+            #data_row.append(compacite[i].flatten()) #TODO
+        if elongation:
+            pass
+            #data_row.append(elongation[i].flatten()) #TODO
+        if couleur_dominante:
+            pass
+            #data_row.append(couleur_dominante[i].flatten()) #TODO
+        if texture or compacite or elongation or couleur_dominante:
+            data.append(data_row[0]) # on ajoute toutes les features de l'échantillon i
     data = np.array(data)
     print(np.shape(data))
 
