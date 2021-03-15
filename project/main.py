@@ -8,6 +8,7 @@ from sklearn import metrics
 from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.metrics import confusion_matrix
 from sklearn.neighbors import KNeighborsClassifier
+from sklearn.cluster import KMeans
 import platform
 
 
@@ -127,6 +128,36 @@ def f_knn(data, label):
 def f_kmeans():
     pass
 
+def couleurmaj(path):
+    for file in sorted(glob.glob(os.path.join(path, '*.*'))):
+        img = cv2.imread('../img/'+file) 
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        plt.imshow(img)
+
+        img = img.reshape((img.shape[0] * img.shape[1], 3))
+        clt = KMeans(n_clusters = 5)
+        clt.fit(img)
+        numLabels = np.arange(0, len(np.unique(clt.labels_)) + 1)
+        (hist, _) = np.histogram(clt.labels_, bins = numLabels)
+        
+        hist = hist.astype("float")
+
+        hist /= hist.sum()
+        bar = plot_colors(hist, clt.cluster_centers_)
+        plt.figure()
+        plt.axis("off")
+        plt.imshow(bar)
+        plt.show()
+    pass
+def plot_colors(hist, centroids):
+    bar = np.zeros((50, 300, 3), dtype = "uint8")   
+    startX = 0
+    for (percent, color) in zip(hist, centroids):
+        endX = startX + (percent * 300)
+        cv2.rectangle(bar, (int(startX), 0), (int(endX), 50),
+        color.astype("uint8").tolist(), -1)
+        startX = endX
+    return bar
 
 def f_segmentation1(path):
     for file in sorted(glob.glob(os.path.join(path, '*.*'))):
@@ -231,11 +262,17 @@ def image_analysis():
                         help = 'clear generated images',
                         action = 'store_true',
                         required = False)
+    parser.add_argument('--colormaj',
+                        '-cm',
+                        help = 'colormaj',
+                        action = 'store_true',
+                        required = False)
     args = parser.parse_args()
     clear = args.clear
     segmentation1 = args.segmentation1
     segmentation2 = args.segmentation2
     segmentation3 = args.segmentation3
+    colormaj=args.colormaj
     knn = args.knn
     kmeans = args.kmeans
 
@@ -244,7 +281,8 @@ def image_analysis():
 
     path = '../img/'
     texture, compacite, elongation, couleur_dominante = None, None, None, None
-
+    if colormaj :
+        couleurmaj(path)
     '''
     1. Segmentation
     '''
