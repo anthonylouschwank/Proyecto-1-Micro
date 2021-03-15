@@ -132,25 +132,28 @@ def couleurmaj(path):
     for file in sorted(glob.glob(os.path.join(path, '*.*'))):
         img = cv2.imread('../img/'+file) 
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        plt.imshow(img)
+        #plt.imshow(img)
 
         img = img.reshape((img.shape[0] * img.shape[1], 3))
         clt = KMeans(n_clusters = 5)
         clt.fit(img)
 
-        numLabels = np.arange(0, len(np.unique(clt.labels_)) + 1)
-        print(clt.labels_)
-        (hist, _) = np.histogram(clt.labels_, bins = numLabels)
+        #numLabels = np.arange(0, len(np.unique(clt.labels_)) + 1)
+        #(hist, _) = np.histogram(clt.labels_, bins = numLabels)
         
-        hist = hist.astype("float")
-        hist /= hist.sum()
+        #hist = hist.astype("float")
+        #hist /= hist.sum()
 
-        bar = plot_colors(hist, clt.cluster_centers_)
-        plt.figure()
-        plt.axis("off")
-        plt.imshow(bar)
-        plt.show()
-    pass
+        #bar = plot_colors(hist, clt.cluster_centers_)
+        print('\n')
+        print(clt.cluster_centers_)
+        #plt.figure()
+        #plt.axis("off")
+        #plt.imshow(bar)
+        #plt.show()
+    
+
+
 def plot_colors(hist, centroids):
     bar = np.zeros((50, 300, 3), dtype = "uint8")   
     startX = 0
