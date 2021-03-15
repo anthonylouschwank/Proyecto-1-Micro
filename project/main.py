@@ -185,11 +185,13 @@ def f_segmentation3(path):
         img2[:,:,0] = img_out
         img2[:,:,1] = img_out
         img2[:,:,2] = img_out
-        #img2 = img2&img
         img[img >= 255] = 0
-        red = np.mean(img[:,:,0]) 
-        green = np.mean(img[:,:,1]) 
-        blue = np.mean(img[:,:,2]) 
+        mask_r = np.ma.masked_less(img[:,:,0],1)
+        mask_g = np.ma.masked_less(img[:,:,1],1)
+        mask_b = np.ma.masked_less(img[:,:,2],1)
+        red = np.mean(mask_r) 
+        green = np.mean(mask_g) 
+        blue = np.mean(mask_b) 
         img[:,:,0] = red
         img[:,:,1] = green
         img[:,:,2] = blue
