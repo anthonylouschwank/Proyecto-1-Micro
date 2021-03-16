@@ -13,6 +13,8 @@ import platform
 import functools
 import operator
 import time
+
+
 def show_image(img, file):
     cv2.imshow(file, img)
     cv2.waitKey(0)  
@@ -22,14 +24,14 @@ def show_image(img, file):
 def clear_generated_dir():
     shutil.rmtree('../img/generated')
 
-
+# unused
 def auto_Canny(img, sigma=0.33):
     v = np.median(img)
     low = int(max(0, 1.0 - sigma) * v)
     up = int(min(255, 1.0 + sigma) * v)
     return cv2.Canny(img, low, up)
 
-
+# unused
 def otsu_canny(image, lowrate=0.1):
     if len(image.shape) > 2:
         image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -37,7 +39,7 @@ def otsu_canny(image, lowrate=0.1):
     edged = cv2.Canny(image, threshold1=(ret * lowrate), threshold2=ret)
     return edged
 
-
+# unused
 def f_sandbox(path):
     for file in sorted(glob.glob(os.path.join(path, '*.*'))):
         img = cv2.imread('../img/'+file) 
@@ -129,6 +131,7 @@ def f_knn(data, label):
 def f_kmeans():
     pass
 
+
 def couleurmaj(path):
     couleurs=[]
     i=0
@@ -140,7 +143,7 @@ def couleurmaj(path):
         #plt.imshow(img)
 
         img = img.reshape((img.shape[0] * img.shape[1], 3))
-        clt = KMeans(n_clusters = 5 ,init='k-means++', max_iter=5)
+        clt = KMeans(n_clusters=5 ,init='k-means++', max_iter=5)
         clt.fit(img)
 
         #numLabels = np.arange(0, len(np.unique(clt.labels_)) + 1)
@@ -154,11 +157,11 @@ def couleurmaj(path):
         #plt.axis("off")
         #plt.imshow(bar)
         #plt.show()
-        couleurs.append(clt.cluster_centers_)
+
+        couleurs.append(list(clt.cluster_centers_.flatten()))
     return couleurs
     
-
-
+# unused
 def plot_colors(hist, centroids):
     bar = np.zeros((50, 300, 3), dtype = "uint8")   
     startX = 0
@@ -168,6 +171,7 @@ def plot_colors(hist, centroids):
         color.astype("uint8").tolist(), -1)
         startX = endX
     return bar
+
 
 def f_segmentation1(path):
     for file in sorted(glob.glob(os.path.join(path, '*.*'))):
@@ -239,6 +243,8 @@ def f_segmentation3(path):
         img_out = img2 & img
         show_image(img_out, file)
 
+
+# Unused
 def transform(nested_list):
     regular_list=[]
     for ele in nested_list:
@@ -247,6 +253,7 @@ def transform(nested_list):
         else:
             regular_list.append([ele])
     return regular_list
+
 
 def image_analysis():
     parser = argparse.ArgumentParser(description='--Analyse Image--')
@@ -298,7 +305,7 @@ def image_analysis():
         clear_generated_dir()
 
     path = '../img/'
-    texture, compacite, elongation = None, None, None
+    texture, compacite, elongation, couleurmajT = None, None, None, None
     '''
     1. Segmentation
     '''
@@ -312,7 +319,7 @@ def image_analysis():
         f_segmentation3(path) # TODO: retourner un tableau couleur_dominante
     
     if colormaj :
-        couleurmajT=couleurmaj(path)
+        couleurmajT = couleurmaj(path)
 
     '''
     2. Calcul des attributs
@@ -323,28 +330,28 @@ def image_analysis():
     (placer l’ensemble des attributs calculés pour chaque objet dans un vecteur 'data')
     '''
     label = f_get_label(path) #vecteur contenant dans le meme ordre les labels des fruits
-    print('taille echantillon:', len(label))
-    # TODO
+    print('Sample size:', len(label))
+   
     data = [] # vecteur data qu'on utilisera pour nos modèles
     for i in range(len(label)):
-        
-        data_row = [] # 1 ligne = 1 echantillon = n features 
+        feature_list = [] # liste des features à ajouter à la data_row
         if texture: 
-            data_row.append(texture[i].flatten())
+            feature_list.append(texture[i]) # 1.Remove ? 2.get better metrics ? 
         if compacite:
             pass
-            #data_row.append(compacite[i].flatten()) #TODO
+            # feature_list.append(compacite[i]) #TODO
         if elongation:
             pass
-            #data_row.append(elongation[i].flatten()) #TODO
+            # feature_list.append(longation[i]) #TODO
         if colormaj:
-            data_row.append(couleurmajT[i].flatten()) #TODO
+            feature_list.append(couleurmajT[i]) # DONE 
         if texture or compacite or elongation or colormaj:
-            data.append(transform(data_row)) # on ajoute toutes les features de l'échantillon i
+            data_row = np.concatenate(feature_list, axis = None)
+            data.append(data_row) # on ajoute toutes les features de l'échantillon i
+
     data = np.array(data)
-    print(np.shape(data))
-    print(data)
-    time.sleep(30)
+    print(np.shape(data), 'data')
+    
     '''
     3. Classification
     '''
