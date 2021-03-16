@@ -10,8 +10,9 @@ from sklearn.metrics import confusion_matrix
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.cluster import KMeans
 import platform
-
-
+import functools
+import operator
+import time
 def show_image(img, file):
     cv2.imshow(file, img)
     cv2.waitKey(0)  
@@ -129,13 +130,17 @@ def f_kmeans():
     pass
 
 def couleurmaj(path):
+    couleurs=[]
+    i=0
     for file in sorted(glob.glob(os.path.join(path, '*.*'))):
+        print("processing colors....."+str(i)+" on 54")
+        i=i+1
         img = cv2.imread('../img/'+file) 
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         #plt.imshow(img)
 
         img = img.reshape((img.shape[0] * img.shape[1], 3))
-        clt = KMeans(n_clusters = 5)
+        clt = KMeans(n_clusters = 5 ,init='k-means++', max_iter=5)
         clt.fit(img)
 
         #numLabels = np.arange(0, len(np.unique(clt.labels_)) + 1)
@@ -145,12 +150,12 @@ def couleurmaj(path):
         #hist /= hist.sum()
 
         #bar = plot_colors(hist, clt.cluster_centers_)
-        print('\n')
-        print(clt.cluster_centers_)
         #plt.figure()
         #plt.axis("off")
         #plt.imshow(bar)
         #plt.show()
+        couleurs.append(clt.cluster_centers_)
+    return couleurs
     
 
 
@@ -234,6 +239,14 @@ def f_segmentation3(path):
         img_out = img2 & img
         show_image(img_out, file)
 
+def transform(nested_list):
+    regular_list=[]
+    for ele in nested_list:
+        if type(ele) is list:
+            regular_list.append(ele)
+        else:
+            regular_list.append([ele])
+    return regular_list
 
 def image_analysis():
     parser = argparse.ArgumentParser(description='--Analyse Image--')
@@ -285,9 +298,7 @@ def image_analysis():
         clear_generated_dir()
 
     path = '../img/'
-    texture, compacite, elongation, couleur_dominante = None, None, None, None
-    if colormaj :
-        couleurmaj(path)
+    texture, compacite, elongation = None, None, None
     '''
     1. Segmentation
     '''
@@ -300,6 +311,9 @@ def image_analysis():
     elif segmentation3:
         f_segmentation3(path) # TODO: retourner un tableau couleur_dominante
     
+    if colormaj :
+        couleurmajT=couleurmaj(path)
+
     '''
     2. Calcul des attributs
         - Couleur dominante (avocat/orange)
@@ -310,11 +324,10 @@ def image_analysis():
     '''
     label = f_get_label(path) #vecteur contenant dans le meme ordre les labels des fruits
     print('taille echantillon:', len(label))
-
-    
     # TODO
     data = [] # vecteur data qu'on utilisera pour nos modèles
     for i in range(len(label)):
+        
         data_row = [] # 1 ligne = 1 echantillon = n features 
         if texture: 
             data_row.append(texture[i].flatten())
@@ -324,14 +337,14 @@ def image_analysis():
         if elongation:
             pass
             #data_row.append(elongation[i].flatten()) #TODO
-        if couleur_dominante:
-            pass
-            #data_row.append(couleur_dominante[i].flatten()) #TODO
-        if texture or compacite or elongation or couleur_dominante:
-            data.append(data_row[0]) # on ajoute toutes les features de l'échantillon i
+        if colormaj:
+            data_row.append(couleurmajT[i].flatten()) #TODO
+        if texture or compacite or elongation or colormaj:
+            data.append(transform(data_row)) # on ajoute toutes les features de l'échantillon i
     data = np.array(data)
     print(np.shape(data))
-
+    print(data)
+    time.sleep(30)
     '''
     3. Classification
     '''
