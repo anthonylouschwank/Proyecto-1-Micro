@@ -293,7 +293,6 @@ def image_analysis():
     segmentation3 = args.segmentation3
     colormaj=args.colormaj
     knn = args.knn
-    kmeans = args.kmeans
 
     if clear:
         clear_generated_dir()
