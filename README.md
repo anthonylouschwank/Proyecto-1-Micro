@@ -42,16 +42,16 @@ __Note__: In Visual Studio Code, don't forget to select the correct Python inter
 __Run the code__
 ```bash
 > cd project
+> python3 main.py -f -c
+```
 
-# Segmentation 1 
-> python3 main.py -s1
+```bash
+> python3 main.py [-h] [--fit] [--classify]
 
-# Segmentation 2
-> python3 main.py -s2
+--Form detection--
 
-# Segmentation 3
-> python3 main.py -s3
-
-# try K-nn with only texture from -s2
-> python3 main.py -s2 --knn
+optional arguments:
+  -h, --help      show this help message and exit
+  --fit, -f       Extract attributes and add them to the classifier
+  --classify, -c  Knn algorithm to classify fruits
 ```

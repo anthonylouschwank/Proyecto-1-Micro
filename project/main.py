@@ -317,7 +317,7 @@ def f_mean_color(path):
 
 
 def image_analysis():
-    parser = argparse.ArgumentParser(description='--Analyse Image--')
+    parser = argparse.ArgumentParser(description='--Form Detection--')
     parser.add_argument('--fit',
                         '-f',
                         help = 'Extract attributes and add them to the classifier',
