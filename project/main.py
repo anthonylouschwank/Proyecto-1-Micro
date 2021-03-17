@@ -216,9 +216,23 @@ def f_segmentation1(path):
         result = cv2.inRange(result, lower, upper)
         kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(9,9))
         result = cv2.dilate(result,kernel)
-        #show_image(result, file)
+        show_image(result, file)
         
         resized = cv2.resize(result, (300,250))
+
+        img2 = np.zeros_like(img)
+        img[img >= 255] = 0
+        mask_r = np.ma.masked_less(img[:,:,0],1)
+        mask_g = np.ma.masked_less(img[:,:,1],1)
+        mask_b = np.ma.masked_less(img[:,:,2],1)
+        red = np.mean(mask_r) 
+        green = np.mean(mask_g) 
+        blue = np.mean(mask_b) 
+        result[:,:,0] = red
+        result[:,:,1] = green
+        result[:,:,2] = blue
+        show_image(result, file)
+
         resultT.append(resized)
     return resultT
         
@@ -246,37 +260,40 @@ def f_segmentation2(path):
 
 
 def f_segmentation3(path):
+    '''
+    mean color 
+    '''
     for file in sorted(glob.glob(os.path.join(path, '*.*'))):
         img = cv2.imread('../img/'+file)  
-        img_bin = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        low_dilated_img = cv2.dilate(img_bin, np.ones((3,3), np.uint8))
-        dilated_img = cv2.dilate(img_bin, np.ones((1000,1000), np.uint8))
-        bg_img = cv2.medianBlur(dilated_img, 7)
-        diff_img = 255 - cv2.absdiff(low_dilated_img, bg_img)
-        _, img_th = cv2.threshold(diff_img, 220, 255, cv2.THRESH_OTSU | cv2.THRESH_BINARY_INV)
-        img_floodfill = img_th.copy()
-        h, w = img_th.shape[:]
-        mask = np.zeros((h+2, w+2), np.uint8)
-        cv2.floodFill(img_floodfill, mask, (0,0), 255);
-        img_floodfill_inv = cv2.bitwise_not(img_floodfill)
-        img_out = img_th | img_floodfill_inv 
-        img2 = np.zeros_like(img)
-        img2[:,:,0] = img_out
-        img2[:,:,1] = img_out
-        img2[:,:,2] = img_out
-        img[img >= 255] = 0
-        mask_r = np.ma.masked_less(img[:,:,0],1)
-        mask_g = np.ma.masked_less(img[:,:,1],1)
-        mask_b = np.ma.masked_less(img[:,:,2],1)
+        result = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+
+        lower = np.array([1,60,50])
+        upper = np.array([255,255,255])
+        result = cv2.inRange(result, lower, upper)
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3,3))
+        result = cv2.dilate(result, kernel)
+
+        new_img = np.zeros_like(img)
+        new_img[:,:,0]=result
+        new_img[:,:,1]=result
+        new_img[:,:,2]=result
+        img2 = img & new_img
+        
+        mask_r = np.ma.masked_less(img2[:,:,0],2)
+        mask_g = np.ma.masked_less(img2[:,:,1],2)
+        mask_b = np.ma.masked_less(img2[:,:,2],2)
         red = np.mean(mask_r) 
         green = np.mean(mask_g) 
         blue = np.mean(mask_b) 
-        img[:,:,0] = red
-        img[:,:,1] = green
-        img[:,:,2] = blue
-        img_out = img2 & img
-        #show_image(img_out, file)
-        return img_out
+        new_img[:,:,0] = red
+        new_img[:,:,1] = green
+        new_img[:,:,2] = blue
+
+        hsv_img = cv2.cvtColor(new_img, cv2.COLOR_BGR2HSV)
+        h, s, v = hsv_img[:, :, 0], hsv_img[:, :, 1], hsv_img[:, :, 2]
+        mean_color = h[0][0]
+        show_image(hsv_img, 'hue value: '+str(mean_color))
+    return img
 
 
 # Unused
@@ -340,7 +357,7 @@ def image_analysis():
         clear_generated_dir()
 
     path = '../img/'
-    texture, compacite, elongation, couleurmajT,zernike_tab = None, None, None, None,None
+    texture, compacite, elongation, couleurmajT,zernike_tab = None, None, None, None, None
     '''
     1. Segmentation
     '''
