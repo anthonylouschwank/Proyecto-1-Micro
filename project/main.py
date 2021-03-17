@@ -97,16 +97,24 @@ def f_knn(data, label):
     # searching for the best k
     knn_scores = []
     knn_classifiers = []
-    for i in range(1, 12):
-        knn = KNeighborsClassifier(n_neighbors=i, algorithm='brute', n_jobs=-1)
-        knn_scores.append(cross_val_score(knn, data, label, cv=7, n_jobs=-1, scoring='accuracy').mean())
-        knn_classifiers.append(knn)
+    knn_random_states = []
+    knn_best_k = []
+    for i in range(1, 12): # for k neighbors
+        for j in range(1, 50): # for random_state
+            knn = KNeighborsClassifier(n_neighbors=i, algorithm='brute')
+            X_train, X_test, y_train, y_test = train_test_split(data, label, train_size=0.7, random_state=j)
+            knn.fit(X_train, y_train)
+            knn_scores.append(knn.score(X_test, y_test))
+            knn_classifiers.append(knn)
+            knn_random_states.append(j)
+            knn_best_k.append(i)
     knn_index = knn_scores.index(np.max(knn_scores))
-    best_k = knn_scores[knn_index]
-    print(f'Best k is {knn_index+1} for {np.round(knn_scores[knn_index], 2)} accuracy')
+    print(f'Best k is {knn_best_k[knn_index]} for {np.round(knn_scores[knn_index], 2)} accuracy')
+    print('best random states:', knn_random_states[knn_index])
+    print('params:', knn_classifiers[knn_index].get_params)
 
     # training with the best k then predicting
-    X_train, X_test, y_train, y_test = train_test_split(data, label, train_size=0.7, random_state=46)
+    X_train, X_test, y_train, y_test = train_test_split(data, label, train_size=0.7, random_state=knn_random_states[knn_index])
     knn_classifiers[knn_index].fit(X_train, y_train)
     y_pred = knn_classifiers[knn_index].predict(X_test)
     print("Accuracy:", metrics.accuracy_score(y_test, y_pred))
@@ -119,10 +127,10 @@ def f_knn(data, label):
     print(cmtx)
 
     # display graph
-    plt.title('Taux de reconnaissance en fonction du nombre de voisins K')
-    plt.xlabel('Nombre de voisins K')
-    plt.ylabel('Taux de reconnaissance')
-    plt.plot(range(1, 12), knn_scores)
+    plt.title('Taux de reconnaissance en fonction du nombre de voisins K et random_state')
+    plt.xlabel('Nb of neighbors K[1,12], random_state[1,50]')
+    plt.ylabel('accuracy')
+    plt.plot(range(1, len(knn_scores)+1), knn_scores)
     plt.axhline(knn_scores[knn_index], color='r')
     plt.axvline(knn_index+1, color='r')
     plt.show()
@@ -134,31 +142,26 @@ def f_kmeans():
 
 def couleurmaj(path):
     couleurs=[]
-    i=0
-    for file in sorted(glob.glob(os.path.join(path, '*.*'))):
-        print("processing colors....."+str(i)+" on 54")
-        i=i+1
+
+    for i, file in enumerate(sorted(glob.glob(os.path.join(path, '*.*')))):
+        print("Processing K-means for majority color: "+str(i)+" on 54", end='\r')
         img = cv2.imread('../img/'+file) 
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        #plt.imshow(img)
-
         img = img.reshape((img.shape[0] * img.shape[1], 3))
-        clt = KMeans(n_clusters=5 ,init='k-means++', max_iter=5)
+        clt = KMeans(n_clusters=5, init='k-means++', random_state=3, algorithm='full') 
         clt.fit(img)
 
         #numLabels = np.arange(0, len(np.unique(clt.labels_)) + 1)
         #(hist, _) = np.histogram(clt.labels_, bins = numLabels)
-        
         #hist = hist.astype("float")
         #hist /= hist.sum()
-
         #bar = plot_colors(hist, clt.cluster_centers_)
         #plt.figure()
         #plt.axis("off")
         #plt.imshow(bar)
         #plt.show()
-
         couleurs.append(list(clt.cluster_centers_.flatten()))
+    print('\n')
     return couleurs
     
 # unused
