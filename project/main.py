@@ -136,10 +136,6 @@ def f_knn(data, label):
     plt.show()
 
 
-def f_kmeans():
-    pass
-
-
 def couleurmaj(path):
     couleurs=[]
 
@@ -280,11 +276,6 @@ def image_analysis():
                         help = 'Knn',
                         action = 'store_true',
                         required = False)
-    parser.add_argument('--kmeans',
-                        '-km',
-                        help = 'Kmeans',
-                        action = 'store_true',
-                        required = False)
     parser.add_argument('--clear',
                         '-c',
                         help = 'clear generated images',
@@ -360,9 +351,6 @@ def image_analysis():
     '''
     if knn:
         f_knn(data, label)
-    if kmeans:
-        f_kmeans()
-    # TODO
 
 def main():
     image_analysis() 
