@@ -173,6 +173,7 @@ def plot_colors(hist, centroids):
 
 
 def f_segmentation1(path):
+    resultT=[]
     for file in sorted(glob.glob(os.path.join(path, '*.*'))):
         img = cv2.imread('../img/'+file) 
         
@@ -181,11 +182,13 @@ def f_segmentation1(path):
         lower = np.array([1,60,50])
         upper = np.array([255,255,255])
         result = cv2.inRange(result, lower, upper)
-
-        #show_image(result, file)
         kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(9,9))
         result = cv2.dilate(result,kernel)
-        show_image(result, file)
+        #show_image(result, file)
+        
+        resized = cv2.resize(result, (300,250))
+        resultT.append(resized)
+    return resultT
         
 
 def f_segmentation2(path):
@@ -240,7 +243,8 @@ def f_segmentation3(path):
         img[:,:,1] = green
         img[:,:,2] = blue
         img_out = img2 & img
-        show_image(img_out, file)
+        #show_image(img_out, file)
+        return img_out
 
 
 # Unused
@@ -302,13 +306,14 @@ def image_analysis():
     '''
     1. Segmentation
     '''
+    remplissage_test=None
     if segmentation1:
-        f_segmentation1(path) #TODO : retourner un tableau elongation ? 
+        remplissage_test=f_segmentation1(path) #TODO : retourner un tableau elongation ? 
     
-    elif segmentation2:
+    if segmentation2:
         texture = f_segmentation2(path) #TODO: retourner un tableau compacite 
     
-    elif segmentation3:
+    if segmentation3:
         f_segmentation3(path) # TODO: retourner un tableau couleur_dominante
     
     if colormaj :
@@ -325,20 +330,32 @@ def image_analysis():
     label = f_get_label(path) #vecteur contenant dans le meme ordre les labels des fruits
     print('Sample size:', len(label))
    
+
+    
+    print(np.shape(remplissage_test), 'remplissage_test')
+    print(np.shape(texture), 'texture')
     data = [] # vecteur data qu'on utilisera pour nos modèles
     for i in range(len(label)):
+        featuretest=0
         feature_list = [] # liste des features à ajouter à la data_row
+        if segmentation1:
+            feature_list.append(remplissage_test[i])
+            featuretest=1
         if texture: 
             feature_list.append(texture[i]) # 1.Remove ? 2.get better metrics ? 
+            featuretest=1
         if compacite:
             pass
             # feature_list.append(compacite[i]) #TODO
+            #featuretest=1
         if elongation:
             pass
             # feature_list.append(longation[i]) #TODO
+            #featuretest=1
         if colormaj:
             feature_list.append(couleurmajT[i]) # DONE 
-        if texture or compacite or elongation or colormaj:
+            featuretest=1
+        if featuretest:
             data_row = np.concatenate(feature_list, axis = None)
             data.append(data_row) # on ajoute toutes les features de l'échantillon i
 
