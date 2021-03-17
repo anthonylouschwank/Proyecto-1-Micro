@@ -13,6 +13,16 @@ import platform
 import functools
 import operator
 import time
+import mahotas
+
+class ZernikeMoments:
+    def __init__(self, radius):
+        # store the size of the radius that will be
+        # used when computing moments
+        self.radius = radius
+    def describe(self, image):
+        # return the Zernike moments for the image
+        return mahotas.features.zernike_moments(image, self.radius)
 
 
 def show_image(img, file):
@@ -171,6 +181,28 @@ def plot_colors(hist, centroids):
         startX = endX
     return bar
 
+def f_zernikes(path):
+    
+    desc=  ZernikeMoments(100)
+    tab=[]
+    for file in sorted(glob.glob(os.path.join(path, '*.*'))):
+        img = cv2.imread('../img/'+file) 
+        
+        result = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+
+        lower = np.array([1,60,50])
+        upper = np.array([255,255,255])
+        result = cv2.inRange(result, lower, upper)
+
+        #show_image(result, file)
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(9,9))
+        result = cv2.dilate(result,kernel)
+        #show_image(result, file)
+        moments = desc.describe(result)
+        tab.append(moments)
+    return tab
+
+
 
 def f_segmentation1(path):
     resultT=[]
@@ -265,6 +297,11 @@ def image_analysis():
                         help = 'segmentation',
                         action = 'store_true',
                         required = False)
+    parser.add_argument('--zernike_moments',
+                        '-z',
+                        help = 'ZernikeMoments',
+                        action = 'store_true',
+                        required = False)
     parser.add_argument('--segmentation2',
                         '-s2',
                         help = 'segmentation',
@@ -295,6 +332,7 @@ def image_analysis():
     segmentation1 = args.segmentation1
     segmentation2 = args.segmentation2
     segmentation3 = args.segmentation3
+    zernike = args.zernike_moments
     colormaj=args.colormaj
     knn = args.knn
 
@@ -302,7 +340,7 @@ def image_analysis():
         clear_generated_dir()
 
     path = '../img/'
-    texture, compacite, elongation, couleurmajT = None, None, None, None
+    texture, compacite, elongation, couleurmajT,zernike_tab = None, None, None, None,None
     '''
     1. Segmentation
     '''
@@ -319,6 +357,9 @@ def image_analysis():
     if colormaj :
         couleurmajT = couleurmaj(path)
 
+    if zernike:
+        zernike_tab = f_zernikes(path)
+
     '''
     2. Calcul des attributs
         - Couleur dominante (avocat/orange)
@@ -334,6 +375,7 @@ def image_analysis():
     
     print(np.shape(remplissage_test), 'remplissage_test')
     print(np.shape(texture), 'texture')
+    print(np.shape(zernike_tab), 'zernike')
     data = [] # vecteur data qu'on utilisera pour nos modèles
     for i in range(len(label)):
         featuretest=0
@@ -355,9 +397,15 @@ def image_analysis():
         if colormaj:
             feature_list.append(couleurmajT[i]) # DONE 
             featuretest=1
+        if zernike:
+            feature_list.append(zernike_tab[i])
+            featuretest=1
+    
         if featuretest:
             data_row = np.concatenate(feature_list, axis = None)
             data.append(data_row) # on ajoute toutes les features de l'échantillon i
+        
+
 
     data = np.array(data)
     print(np.shape(data), 'data')
