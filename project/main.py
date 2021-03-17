@@ -146,6 +146,20 @@ def f_knn(data, label):
     plt.show()
 
 
+def f_zernike_reduced(tab):
+
+    tab_reduced=[]
+    
+    for i in tab:
+
+        tab_reduced.append(np.mean(i))
+
+    return tab_reduced    
+
+
+        
+
+
 def couleurmaj(path):
     couleurs=[]
 
@@ -359,6 +373,8 @@ def image_analysis():
 
     if zernike:
         zernike_tab = f_zernikes(path)
+        zernike_tabRed = f_zernike_reduced(zernike_tab)
+
 
     '''
     2. Calcul des attributs
@@ -398,9 +414,9 @@ def image_analysis():
             feature_list.append(couleurmajT[i]) # DONE 
             featuretest=1
         if zernike:
-            feature_list.append(zernike_tab[i])
+            feature_list.append(zernike_tabRed[i])
             featuretest=1
-    
+
         if featuretest:
             data_row = np.concatenate(feature_list, axis = None)
             data.append(data_row) # on ajoute toutes les features de l'échantillon i
