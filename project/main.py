@@ -54,23 +54,20 @@ def f_knn(data, label):
     # searching for the best k
     knn_scores = []
     knn_classifiers = []
-    knn_random_states = []
     knn_best_k = []
     for i in range(1, 12): # for k neighbors
-        for j in range(1, 50): # for random_state
-            knn = KNeighborsClassifier(n_neighbors=i, algorithm='brute')
-            X_train, X_test, y_train, y_test = train_test_split(data, label, train_size=0.7, random_state=j)
-            knn.fit(X_train, y_train)
-            knn_scores.append(knn.score(X_test, y_test))
-            knn_classifiers.append(knn)
-            knn_random_states.append(j)
-            knn_best_k.append(i)
+        knn = KNeighborsClassifier(n_neighbors=i, algorithm='brute')
+        X_train, X_test, y_train, y_test = train_test_split(data, label, train_size=0.7, random_state=24)
+        knn.fit(X_train, y_train)
+        knn_scores.append(knn.score(X_test, y_test))
+        knn_classifiers.append(knn)
+        knn_best_k.append(i)
     knn_index = knn_scores.index(np.max(knn_scores))
     print(f'\nBest k is {knn_best_k[knn_index]} for {np.round(knn_scores[knn_index], 2)} accuracy')
     #print('params:', knn_classifiers[knn_index].get_params)
 
     # training with the best k then predicting
-    X_train, X_test, y_train, y_test = train_test_split(data, label, train_size=0.7, random_state=knn_random_states[knn_index])
+    X_train, X_test, y_train, y_test = train_test_split(data, label, train_size=0.7, random_state=24)
     knn_classifiers[knn_index].fit(X_train, y_train)
     y_pred = knn_classifiers[knn_index].predict(X_test)
     print("Accuracy:", metrics.accuracy_score(y_test, y_pred))
@@ -83,8 +80,8 @@ def f_knn(data, label):
     print(cmtx)
 
     # display graph
-    plt.title('Taux de reconnaissance en fonction du nombre de voisins K et random_state')
-    plt.xlabel('Nb of neighbors K[1,12], random_state[1,50]')
+    plt.title('Taux de reconnaissance en fonction du nombre de voisins K')
+    plt.xlabel('Nombre de k-voisins K[1,12]')
     plt.ylabel('accuracy')
     plt.scatter(range(1, len(knn_scores)+1), knn_scores)
     plt.axhline(knn_scores[knn_index], color='r')
