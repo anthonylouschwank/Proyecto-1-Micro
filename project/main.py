@@ -10,6 +10,8 @@ from sklearn.metrics import confusion_matrix
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.cluster import KMeans
 from collections import Counter, defaultdict
+from sklearn import preprocessing
+from sklearn.preprocessing import StandardScaler
 
 # unused
 def clear_generated_dir():
@@ -247,9 +249,11 @@ def f_zernikes(path):
         print("Processing Zernikes moments: "+str(i+1)+" on 54", end='\r')
         img = cv2.imread('../img/'+file) 
         result = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-        lower = np.array([1,60,50])
+        lower = np.array([1,45,0])
         upper = np.array([255,255,255])
         result = cv2.inRange(result, lower, upper)
+        #show_image(img, file)
+        #show_image(result, file)
         kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(9,9))
         result = cv2.dilate(result,kernel)
         moments = desc.describe(result)
@@ -335,7 +339,7 @@ def image_analysis():
     classify = args.classify
 
     path = '../img/'
-    majority_color_res, zernike_moments_res, mean_color_res, count_res, elongation_res = None, None, None, None, None
+    majority_color_res, zernike_moments_res, mean_color_res, elongation_res = None, None, None, None
     '''
     1. Segmentation 
     2. Post-processing
@@ -354,8 +358,6 @@ def image_analysis():
         print('Majority color shape', np.shape(majority_color_res))
         print('Mean color shape', np.shape(mean_color_res))
 
-        print(count_res)
-
         data = [] # vecteur data qu'on utilisera pour nos modèles
         for i in range(len(label)):
             feature_list = [] # liste des features à ajouter à la data_row
@@ -367,6 +369,7 @@ def image_analysis():
             data.append(data_row) # on ajoute toutes les features de l'échantillon i
         
         data = np.array(data)
+        data = preprocessing.StandardScaler().fit_transform(data) # Normalisation des données
         print('data shape:', np.shape(data), 'nb_rows:', np.shape(data)[0], 'nb_columns:', np.shape(data)[1])
     
     '''
