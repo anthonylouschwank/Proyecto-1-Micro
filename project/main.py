@@ -13,121 +13,6 @@ from collections import Counter, defaultdict
 from sklearn import preprocessing
 from sklearn.preprocessing import StandardScaler
 
-# unused
-def clear_generated_dir():
-    shutil.rmtree('../img/generated')
-
-# Unused
-def transform(nested_list):
-    regular_list=[]
-    for ele in nested_list:
-        if type(ele) is list:
-            regular_list.append(ele)
-        else:
-            regular_list.append([ele])
-    return regular_list
-
-# unused
-def auto_Canny(img, sigma=0.33):
-    v = np.median(img)
-    low = int(max(0, 1.0 - sigma) * v)
-    up = int(min(255, 1.0 + sigma) * v)
-    return cv2.Canny(img, low, up)
-
-# unused
-def otsu_canny(image, lowrate=0.1):
-    if len(image.shape) > 2:
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    ret, _ = cv2.threshold(image, thresh=0, maxval=255, type=(cv2.THRESH_BINARY + cv2.THRESH_OTSU))
-    edged = cv2.Canny(image, threshold1=(ret * lowrate), threshold2=ret)
-    return edged
-
-# unused
-def f_sandbox(path):
-    for file in sorted(glob.glob(os.path.join(path, '*.*'))):
-        img = cv2.imread('../img/'+file) 
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) 
-        img = cv2.GaussianBlur(img, (3,3), 0)
-        #img = auto_Canny(img)
-        img = otsu_canny(img)
-
-        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (7, 7)) 
-        img = cv2.morphologyEx(img, cv2.MORPH_CLOSE, kernel) 
-        img = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 5)
-        #kernel = np.ones((4,4),np.uint8)
-        img = cv2.morphologyEx(img, cv2.MORPH_CLOSE, kernel)
-        contours, hierarchy = cv2.findContours(img.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
-        #print(np.shape(contours))
-        #print(hierarchy)
-        #mx = (0,0,0,0)      # biggest bounding box so far
-        #mx_area = 0
-        #for cont in contours:
-        #    x,y,w,h = cv2.boundingRect(cont)
-        #    area = w*h
-        #    if area > mx_area:
-        #        mx = x,y,w,h
-        #        mx_area = area
-        #x,y,w,h = mx
-        #img=img[y:y+h,x:x+w]
-        #contours, hierarchy = cv2.findContours(img.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
-        cv2.drawContours(img, contours, contourIdx=-1, color=(255, 255, 255),thickness=-1)
-        show_image(img, file)
-        '''
-        if not os.path.exists('../img/generated/'):
-            os.makedirs('../img/generated/')
-        if not os.path.exists('../img/generated/segmentation'):
-            os.makedirs('../img/generated/segmentation')
-        cv2.imwrite('../img/generated/segmentation/' + str(uuid.uuid1()) + '.jpg', img2)
-        '''
-
-# unused
-def plot_colors(hist, centroids):
-    bar = np.zeros((50, 300, 3), dtype = "uint8")   
-    startX = 0
-    for (percent, color) in zip(hist, centroids):
-        endX = startX + (percent * 300)
-        cv2.rectangle(bar, (int(startX), 0), (int(endX), 50),
-        color.astype("uint8").tolist(), -1)
-        startX = endX
-    return bar
-
-# unused
-def f_zernike_reduced(tab):
-    tab_reduced=[]
-    for i in tab:
-        tab_reduced.append(np.mean(i))
-    return tab_reduced    
-
-# unused
-def f_count(path):
-    '''
-    1. get textures through canny filter
-    2. Count the nb of white pixels
-    '''
-    counts = []
-    for i, file in enumerate(sorted(glob.glob(os.path.join(path, '*.*')))):
-        print("Processing count: "+str(i+1)+" on 54", end='\r')
-        img = cv2.imread('../img/'+file) 
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) 
-        img = cv2.GaussianBlur(img, (5,5), 2)
-        img = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 2)
-        ret, res = cv2.threshold(img, 70, 255, cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)
-        kernel = np.ones((3,3), np.uint8) 
-        img = cv2.erode(res, kernel)
-        img = cv2.dilate(img, kernel)
-        img = cv2.Canny(res, 50, 200) 
-        h = cv2.findContours(img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE) 
-        contours = h[0]
-        ret = np.ones(res.shape, np.uint8) 
-        cv2.drawContours(ret,contours,-1,(255,255,255),1) 
-        resized = cv2.resize(ret, (300,250))
-        ret[ret > 10] = 255
-        ret[ret <= 10] = 0
-        colors, counter = np.unique(ret, return_counts=True, axis=None)
-        counts.append(counter[1])
-    print('')
-    return counts
-
 
 class ZernikeMoments:
     def __init__(self, radius):
@@ -216,16 +101,6 @@ def f_majority_color(path):
         img = img.reshape((img.shape[0] * img.shape[1], 3))
         clt = KMeans(n_clusters=5, init='k-means++', random_state=3, algorithm='full') 
         clt.fit(img)
- 
-        #numLabels = np.arange(0, len(np.unique(clt.labels_)) + 1)
-        #(hist, _) = np.histogram(clt.labels_, bins = numLabels)
-        #hist = hist.astype("float")
-        #hist /= hist.sum()
-        #bar = plot_colors(hist, clt.cluster_centers_)
-        #plt.figure()
-        #plt.axis("off")
-        #plt.imshow(bar)
-        #plt.show()
         tmp=Counter(clt.labels_)        
         chosen=tmp.most_common(1)[0]
         chosen=clt.cluster_centers_[chosen[0]]
@@ -246,14 +121,12 @@ def f_zernikes(path):
     desc = ZernikeMoments(100)
     tab = []
     for i, file in enumerate(sorted(glob.glob(os.path.join(path, '*.*')))):
-        print("Processing Zernikes moments: "+str(i+1)+" on 54", end='\r')
+        print("Processing for Zernikes moments: "+str(i+1)+" on 54", end='\r')
         img = cv2.imread('../img/'+file) 
         result = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
         lower = np.array([1,45,0])
         upper = np.array([255,255,255])
         result = cv2.inRange(result, lower, upper)
-        #show_image(img, file)
-        #show_image(result, file)
         kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(9,9))
         result = cv2.dilate(result,kernel)
         moments = desc.describe(result)
@@ -269,7 +142,7 @@ def f_elongation(path):
     '''
     elongations = []
     for i,file in enumerate(sorted(glob.glob(os.path.join(path, '*.*')))):
-        print("Processing elongation: "+str(i+1)+" on 54", end='\r')
+        print("Processing for elongation: "+str(i+1)+" on 54", end='\r')
         img = cv2.imread('../img/'+file) 
         result = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
         lower = np.array([1,45,0])
@@ -291,7 +164,7 @@ def f_mean_color(path):
     '''
     mean_colors = []
     for i, file in enumerate(sorted(glob.glob(os.path.join(path, '*.*')))):
-        print("Processing mean color: "+str(i+1)+" on 54", end='\r')
+        print("Processing for mean color: "+str(i+1)+" on 54", end='\r')
         img = cv2.imread('../img/'+file)  
         result = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
         lower = np.array([1,60,50])
