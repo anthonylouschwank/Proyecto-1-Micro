@@ -39,6 +39,18 @@ __Note__: In Visual Studio Code, don't forget to select the correct Python inter
 
 <br/>
 
+**Fruit images**
+
+Download trainset and testset images: [here](https://mega.nz/file/rDQngIAL#Wncxuyb1oBoI8CSDBAE5dCG2WuAP6ViXQXaWPsVH0RU)
+
+Move download images to their respective folder
+
+img/[downloaded images]
+
+Note: **img/** directory must be at the same location as **project/** directory
+
+<br/>
+
 __Run the code__
 ```bash
 > cd project
