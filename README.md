@@ -1,4 +1,4 @@
-# Emotion-Recognition
+# Fruit-Recognition
 
 ## Author
 
