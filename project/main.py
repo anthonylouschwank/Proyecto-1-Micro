@@ -96,7 +96,7 @@ def f_majority_color(path):
         img = cv2.imread('../img/'+file) 
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         img = img.reshape((img.shape[0] * img.shape[1], 3))
-        clt = KMeans(n_clusters=5, init='k-means++', random_state=3, algorithm='full') 
+        clt = KMeans(n_clusters=5, init='k-means++', random_state=3, algorithm='lloyd') 
         clt.fit(img)
         tmp=Counter(clt.labels_)        
         chosen=tmp.most_common(1)[0]
