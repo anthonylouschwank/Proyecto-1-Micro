@@ -3,3 +3,4 @@ documents
 .vscode
 .venv
 .ipynb_checkpoints
+env/
