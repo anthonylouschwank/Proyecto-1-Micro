@@ -12,7 +12,20 @@ from sklearn.cluster import KMeans
 from collections import Counter, defaultdict
 from sklearn import preprocessing
 from sklearn.preprocessing import StandardScaler
+import ctypes
+import platform
 
+
+cpp_lib = ctypes.CDLL('./project/cpp/elongation.dll')
+
+# Definir los prototipos de funciones
+cpp_lib.calculateElongation.argtypes = [
+    ctypes.POINTER(ctypes.c_double),
+    ctypes.POINTER(ctypes.c_double),
+    ctypes.POINTER(ctypes.c_double),
+    ctypes.c_int,
+    ctypes.POINTER(ctypes.c_double)
+]
 
 class ZernikeMoments:
     def __init__(self, radius):
@@ -137,20 +150,42 @@ def f_elongation(path):
     1. Threshold: fruit forms in white color and background in black color
     2. get elongation attribute
     '''
-    elongations = []
-    for i,file in enumerate(sorted(glob.glob(os.path.join(path, '*.*')))):
+    mu20_list, mu02_list, mu11_list = [], [], []
+
+    for i, file in enumerate(sorted(glob.glob(os.path.join(path, '*.*')))):
         print("Processing for elongation: "+str(i+1)+" on 54", end='\r')
         img = cv2.imread('../img/'+file) 
         result = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-        lower = np.array([1,45,0])
-        upper = np.array([255,255,255])
+        lower = np.array([1, 45, 0])
+        upper = np.array([255, 255, 255])
         result = cv2.inRange(result, lower, upper)
-        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(9,9))
-        result = cv2.dilate(result,kernel)
-        resized = cv2.resize(result, (300,250))
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (9, 9))
+        result = cv2.dilate(result, kernel)
+        resized = cv2.resize(result, (300, 250))
         resized[resized > 0] = 255
         m = cv2.moments(resized)
-        elongations.append(get_elongation(m))
+        
+        mu20_list.append(m['mu20'])
+        mu02_list.append(m['mu02'])
+        mu11_list.append(m['mu11'])
+
+    # Convertir las listas en arrays numpy
+    mu20 = np.array(mu20_list)
+    mu02 = np.array(mu02_list)
+    mu11 = np.array(mu11_list)
+
+    # Preparar el array de resultados
+    elongations = np.zeros(len(mu20), dtype=np.float64)
+
+    # Llamar a la función C++ paralelizada
+    cpp_lib.calculateElongation(
+        mu20.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
+        mu02.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
+        mu11.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
+        len(mu20),
+        elongations.ctypes.data_as(ctypes.POINTER(ctypes.c_double))
+    )
+
     print('')
     return elongations
         
