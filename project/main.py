@@ -14,18 +14,10 @@ from sklearn import preprocessing
 from sklearn.preprocessing import StandardScaler
 import ctypes
 import platform
+import subprocess
+import numpy as np
+import os, glob
 
-
-cpp_lib = ctypes.CDLL('./project/cpp/elongation.dll')
-
-# Definir los prototipos de funciones
-cpp_lib.calculateElongation.argtypes = [
-    ctypes.POINTER(ctypes.c_double),
-    ctypes.POINTER(ctypes.c_double),
-    ctypes.POINTER(ctypes.c_double),
-    ctypes.c_int,
-    ctypes.POINTER(ctypes.c_double)
-]
 
 class ZernikeMoments:
     def __init__(self, radius):
@@ -148,7 +140,7 @@ def f_zernikes(path):
 def f_elongation(path):
     '''
     1. Threshold: fruit forms in white color and background in black color
-    2. get elongation attribute
+    2. Get elongation attribute by calling C++ executable
     '''
     mu20_list, mu02_list, mu11_list = [], [], []
 
@@ -170,25 +162,40 @@ def f_elongation(path):
         mu11_list.append(m['mu11'])
 
     # Convertir las listas en arrays numpy
-    mu20 = np.array(mu20_list)
-    mu02 = np.array(mu02_list)
-    mu11 = np.array(mu11_list)
+    mu20 = np.array(mu20_list, dtype=np.float64)
+    mu02 = np.array(mu02_list, dtype=np.float64)
+    mu11 = np.array(mu11_list, dtype=np.float64)
 
-    # Preparar el array de resultados
-    elongations = np.zeros(len(mu20), dtype=np.float64)
+    # Convertir los arrays a strings para pasarlos como argumentos
+    mu20_str = " ".join(map(str, mu20))
+    mu02_str = " ".join(map(str, mu02))
+    mu11_str = " ".join(map(str, mu11))
 
-    # Llamar a la función C++ paralelizada
-    cpp_lib.calculateElongation(
-        mu20.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
-        mu02.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
-        mu11.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
-        len(mu20),
-        elongations.ctypes.data_as(ctypes.POINTER(ctypes.c_double))
-    )
+    # Ejecutar el archivo ejecutable C++ con los parámetros necesarios
+    try:
+        result = subprocess.run(
+            ['./project/cpp/elongation.exe', mu20_str, mu02_str, mu11_str],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+        )
+    except Exception as e:
+        print(f"Error al ejecutar el archivo .exe: {e}")
+        return None
+
+    # Comprobar si hubo errores
+    if result.returncode != 0:
+        print(f"Error en la ejecución del .exe: {result.stderr}")
+        return None
+
+    # Leer la salida del ejecutable
+    elongations_str = result.stdout.strip()
+
+    # Convertir la salida (string) de vuelta a un array de elongaciones
+    elongations = np.array(list(map(float, elongations_str.split())))
 
     print('')
     return elongations
-        
+
+
 
 def f_mean_color(path):
     '''
